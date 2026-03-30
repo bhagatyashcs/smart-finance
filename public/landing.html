@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html ng-app="landingApp">
+<head>
+  <title>Smart Finance | Master Your Money</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* GLOBAL RESETS & THEME */
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+    body { font-family: 'Inter', sans-serif; background: #0B1120; color: #f8fafc; line-height: 1.6; overflow-x: hidden; position: relative; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px 20px 60px 20px; position: relative; z-index: 10; }
+
+    /* BACKGROUND ANIMATIONS */
+    .bg-grid {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0;
+      background-size: 60px 60px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    }
+
+    .glow-orb {
+      position: fixed; border-radius: 50%; filter: blur(100px); z-index: 1; opacity: 0.45;
+      animation: floatOrb 12s infinite alternate ease-in-out;
+    }
+    .orb-1 { width: 500px; height: 500px; background: #38bdf8; top: -150px; left: -150px; }
+    .orb-2 { width: 600px; height: 600px; background: #818cf8; bottom: -200px; right: -150px; animation-delay: -5s; }
+    .orb-3 { width: 400px; height: 400px; background: #10b981; top: 30%; left: 40%; animation-delay: -9s; opacity: 0.3; }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, -50px) scale(1.1); }
+    }
+
+    /* HEADER & AUTH BUTTONS */
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid rgba(30, 41, 59, 0.5); margin-bottom: 40px; }
+    header h2 { font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; font-size: 1.5rem; }
+    .header-btns button { padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.9rem; margin-left: 10px; }
+    .btn-login { background: transparent; border: 1px solid #334155; color: #cbd5e1; }
+    .btn-login:hover { background: rgba(30, 41, 59, 0.8); color: #fff; }
+    .btn-signup { background: #38bdf8; border: none; color: #0B1120; }
+    .btn-signup:hover { background: #0ea5e9; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+
+    /* AUTH MODAL */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 17, 32, 0.85); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+    .auth-card { background: rgba(30, 41, 59, 0.9); border: 1px solid #334155; padding: 40px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+    .auth-card h2 { color: #fff; margin-bottom: 20px; font-weight: 700; font-size: 1.5rem; border: none; padding: 0;}
+    .auth-card input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #475569; background: rgba(15, 23, 42, 0.8); color: white; margin-bottom: 15px; font-family: inherit; }
+    .auth-card input:focus { border-color: #38bdf8; }
+    .auth-btn { width: 100%; padding: 14px; background: #38bdf8; color: #0B1120; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-bottom: 10px; font-size: 1rem;}
+    .auth-btn:hover { background: #0ea5e9; }
+    .close-btn { background: transparent; color: #94A3B8; border: none; width: 100%; cursor: pointer; font-size: 0.9rem; padding: 10px; }
+    .close-btn:hover { color: #fff; }
+
+    /* HERO SECTION */
+    .hero { text-align: center; margin-bottom: 60px; position: relative; }
+    .hero h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -1.5px; background: linear-gradient(to right, #ffffff, #94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero p { font-size: 1.2rem; color: #94a3b8; max-width: 600px; margin: 0 auto; }
+
+    .live-bar { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 30px; padding: 10px 25px; display: inline-flex; gap: 20px; margin-bottom: 40px; font-size: 0.9rem; font-weight: 600; backdrop-filter: blur(10px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .live-item span:first-child { color: #94a3b8; margin-right: 5px; }
+    
+    /* TOOLS GRID */
+    .tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px; }
+    .tool-card { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(51, 65, 85, 0.8); border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); transition: all 0.3s ease; }
+    .tool-card:hover { transform: translateY(-5px); border-color: #38bdf8; box-shadow: 0 20px 40px -5px rgba(56, 189, 248, 0.15); }
+    .tool-card h2 { font-size: 1.5rem; margin-bottom: 20px; color: #fff; display: flex; align-items: center; gap: 10px; }
+
+    input.calc-input, select.calc-select { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid #475569; background: rgba(15, 23, 42, 0.8); color: white; font-size: 1rem; font-family: inherit; margin-bottom: 15px; transition: 0.3s; }
+    input.calc-input:focus, select.calc-select:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2); }
+
+    .result-box { background: rgba(15, 23, 42, 0.8); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #38bdf8; display: flex; justify-content: space-between; align-items: center; }
+    
+    .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
+    .cat-btn { background: rgba(51, 65, 85, 0.5); border: 1px solid transparent; padding: 10px; border-radius: 8px; color: #e2e8f0; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .cat-btn:hover { background: rgba(71, 85, 105, 0.8); border-color: #38bdf8; }
+
+    .action-link-btn { width: 100%; padding: 14px; background: #38bdf8; color: #0B1120; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: all 0.2s; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); }
+    .action-link-btn:hover { background: #0ea5e9; transform: translateY(-2px); }
+
+    /* CHART SECTION */
+    .chart-section { background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(51, 65, 85, 0.8); border-radius: 16px; padding: 30px; margin-bottom: 60px; height: 350px; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .live-badge { font-size: 0.75rem; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
+    .section-title { font-size: 1.5rem; margin-bottom: 20px; color: #fff; padding-bottom: 10px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+    .faq-item { margin-bottom: 15px; background: rgba(30, 41, 59, 0.4); padding: 15px 20px; border-radius: 8px; border: 1px solid rgba(51, 65, 85, 0.5); backdrop-filter: blur(5px); }
+    .faq-item h4 { color: #38bdf8; margin-bottom: 5px; }
+    .faq-item p { color: #94a3b8; font-size: 0.95rem; }
+    
+    .fact-card { background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8)); border: 1px solid rgba(51, 65, 85, 0.5); padding: 20px; border-radius: 12px; margin-bottom: 15px; position: relative; overflow: hidden; backdrop-filter: blur(10px); }
+    .fact-card::before { content: '💡'; position: absolute; top: -10px; right: -10px; font-size: 4rem; opacity: 0.05; }
+    .fact-card h4 { color: #10b981; margin-bottom: 8px; }
+    .fact-card p { color: #cbd5e1; font-size: 0.95rem; }
+
+    @media (max-width: 900px) { .tools-grid, .bottom-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body ng-controller="LandingCtrl">
+
+  <div class="bg-grid"></div>
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
+
+  <div class="modal-overlay" ng-show="showAuth" style="display:none;">
+    <div class="auth-card">
+      <h2>{{isLogin ? 'Welcome Back' : 'Create Account'}}</h2>
+      <p style="color: #ef4444; font-size: 0.85rem; margin-bottom: 10px;" ng-show="authError">{{authError}}</p>
+      
+      <input type="text" ng-model="username" placeholder="Username">
+      <input type="password" ng-model="password" placeholder="Password">
+      
+      <button class="auth-btn" ng-click="submitAuth()">{{isLogin ? 'Log In' : 'Sign Up'}}</button>
+      <button class="close-btn" ng-click="showAuth = false">Close</button>
+      
+      <p style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #94a3b8;">
+        {{isLogin ? "Don't have an account?" : "Already have an account?"}} 
+        <span style="color: #38bdf8; cursor: pointer; font-weight: bold;" ng-click="isLogin = !isLogin">{{isLogin ? 'Sign up' : 'Log in'}}</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    
+    <header>
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        SmartFinance
+      </h2>
+      <div class="header-btns">
+        <button class="btn-login" ng-click="openAuth(true)" ng-hide="isLoggedIn">Login</button>
+        <button class="btn-signup" ng-click="openAuth(false)" ng-hide="isLoggedIn">Create Account</button>
+        <span style="color: #10b981; font-weight: 600; margin-right: 15px; background: rgba(16, 185, 129, 0.1); padding: 5px 12px; border-radius: 20px;" ng-show="isLoggedIn">Logged in as {{loggedInUser}}</span>
+        <button class="btn-login" ng-click="logout()" ng-show="isLoggedIn">Logout</button>
+      </div>
+    </header>
+
+    <div class="hero">
+      <div class="live-bar">
+        <div class="live-item"><span>BTC/USDT:</span> <span style="color: #10b981;" ng-if="liveBTC">${{liveBTC | number:2}}</span><span ng-if="!liveBTC">Loading...</span></div>
+        <div class="live-item"><span>USD/INR:</span> <span style="color: #ef4444;" ng-if="liveINR">₹{{liveINR | number:2}}</span><span ng-if="!liveINR">Loading...</span></div>
+      </div>
+      
+      <h1>Master Your Wealth.</h1>
+      <p>Institutional-grade tools for personal portfolio management, expense tracking, and intelligent tax calculation.</p>
+    </div>
+
+    <div class="tools-grid">
+      
+      <div class="tool-card">
+        <h2>💸 Income & Expense Planner</h2>
+        <p style="color: #94a3b8; margin-bottom: 15px; font-size: 0.9rem;">Enter your income to see estimated basic tax, then allocate your spending.</p>
+        
+        <input class="calc-input" type="number" ng-model="income" ng-change="calculateIncomeTax()" placeholder="Enter Annual Income (₹)">
+        
+        <div class="result-box" ng-show="income > 0">
+          <span>Est. Income Tax (Old Regime):</span>
+          <span style="color: #ef4444; font-weight: bold; font-size: 1.1rem;">₹{{estIncomeTax | number:0}}</span>
+        </div>
+
+        <p style="color: #cbd5e1; font-size: 0.9rem; margin-top: 20px; font-weight: 500;">Quick Expense Categories:</p>
+        <div class="category-grid">
+          <button class="cat-btn"><span>🛒</span> Lifestyle</button>
+          <button class="cat-btn"><span>🎓</span> Education</button>
+          <button class="cat-btn"><span>🏠</span> Housing</button>
+          <button class="cat-btn"><span>🏥</span> Health</button>
+          <button class="cat-btn"><span>✈️</span> Travel</button>
+          <button class="cat-btn"><span>🍔</span> Food</button>
+        </div>
+        
+        <a href="/expense.html" style="text-decoration: none;">
+          <button class="action-link-btn" style="margin-top: 25px;">Launch Expense Module ➔</button>
+        </a>
+      </div>
+
+      <div class="tool-card">
+        <h2>📈 Investment Tax Calculator</h2>
+        <p style="color: #94a3b8; margin-bottom: 15px; font-size: 0.9rem;">Different investments carry different taxes. See what you actually keep.</p>
+        
+        <select class="calc-select" ng-model="assetType" ng-change="calculateInvestTax()">
+          <option value="">-- Select Asset Class --</option>
+          <option value="crypto">Web3 / Crypto (30% Flat)</option>
+          <option value="stcg">Short-Term Stocks (< 1 yr) (20%)</option>
+          <option value="ltcg">Long-Term Stocks (> 1 yr) (12.5%*)</option>
+        </select>
+        
+        <input class="calc-input" type="number" ng-model="profit" ng-change="calculateInvestTax()" placeholder="Enter Total Profit (₹)">
+        
+        <div class="result-box" ng-show="profit > 0 && assetType">
+          <span>Tax Deducted:</span>
+          <span style="color: #ef4444; font-weight: bold; font-size: 1.1rem;">- ₹{{investTaxOwed | number:0}}</span>
+        </div>
+        <div class="result-box" ng-show="profit > 0 && assetType" style="border-left-color: #10b981; background: rgba(16, 185, 129, 0.05);">
+          <span>Net Take-Home:</span>
+          <span style="color: #10b981; font-weight: bold; font-size: 1.2rem;">₹{{profit - investTaxOwed | number:0}}</span>
+        </div>
+        <p ng-if="assetType == 'ltcg'" style="font-size: 0.8rem; color: #10b981; text-align: right; margin-top: 5px;">*First ₹1.25L is tax-free!</p>
+
+        <a href="/invest.html" style="text-decoration: none; display: block; margin-top: auto;">
+          <button class="action-link-btn" style="margin-top: 15px; background: #818cf8; color: white; box-shadow: 0 4px 15px rgba(129, 140, 248, 0.3);">Launch Portfolio Wizard ➔</button>
+        </a>
+      </div>
+
+    </div>
+
+    <div class="chart-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="color: #fff; font-size: 1.2rem; border: none; margin: 0;">Live Market Trend (BTC/USDT)</h3>
+        <span class="live-badge">Live 30-Day Data</span>
+      </div>
+      <div style="position: relative; height: 260px; width: 100%;">
+        <canvas id="landingChart"></canvas>
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div>
+        <h3 class="section-title">Frequently Asked Questions</h3>
+        <div class="faq-item">
+          <h4>Do I need an account to use this?</h4>
+          <p>No! You can use the dashboard as a guest. However, creating a free account allows you to securely save your data to MongoDB so it doesn't disappear when you close the browser.</p>
+        </div>
+        <div class="faq-item">
+          <h4>Are my financial details safe?</h4>
+          <p>Yes. If you create an account, your data is securely stored in a database with industry-standard JWT encryption protecting your session.</p>
+        </div>
+        <div class="faq-item">
+          <h4>Why is Crypto tax so high?</h4>
+          <p>Under Section 115BBH of the Income Tax Act, Virtual Digital Assets are taxed at a flat 30% without allowing deductions for losses.</p>
+        </div>
+      </div>
+      <div>
+        <h3 class="section-title">Smart Money Facts</h3>
+        <div class="fact-card">
+          <h4>The 50/30/20 Rule</h4>
+          <p>A popular budgeting method: spend 50% of your after-tax pay on needs, 30% on wants, and put 20% toward savings or paying off debt.</p>
+        </div>
+        <div class="fact-card">
+          <h4>Power of Compounding</h4>
+          <p>Albert Einstein reportedly called compound interest the "eighth wonder of the world." Reinvesting your profits causes your wealth to grow exponentially over time.</p>
+        </div>
+        <div class="fact-card">
+          <h4>LTCG Exemption</h4>
+          <p>In India, if you hold stocks for over a year, the first ₹1,25,000 of your profit is completely tax-free. Patience pays off!</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    var app = angular.module("landingApp", []);
+    
+    app.controller("LandingCtrl", function($scope, $http, $window){
+      document.querySelector('.modal-overlay').style.display = '';
+
+      $scope.isLoggedIn = !!$window.localStorage.getItem('token');
+      $scope.loggedInUser = $window.localStorage.getItem('username') || '';
+      
+      $scope.showAuth = false;
+      $scope.isLogin = true;
+      $scope.authError = "";
+
+      $scope.openAuth = function(isLoginMode) {
+        $scope.isLogin = isLoginMode;
+        $scope.showAuth = true;
+        $scope.authError = "";
+      };
+
+      $scope.logout = function() {
+        $window.localStorage.removeItem('token');
+        $window.localStorage.removeItem('username');
+        $scope.isLoggedIn = false;
+        $scope.loggedInUser = '';
+      };
+
+      $scope.submitAuth = function() {
+        if(!$scope.username || !$scope.password) { $scope.authError = "Please fill all fields."; return; }
+        
+        let endpoint = $scope.isLogin ? "/login" : "/signup";
+        $http.post(endpoint, { username: $scope.username, password: $scope.password })
+          .then(function(res) {
+            if(!$scope.isLogin) {
+              $scope.isLogin = true;
+              $scope.authError = "Account created! Please log in.";
+              $scope.password = "";
+            } else {
+              $window.localStorage.setItem('token', res.data.token);
+              $window.localStorage.setItem('username', res.data.username);
+              $scope.isLoggedIn = true;
+              $scope.loggedInUser = res.data.username;
+              $scope.showAuth = false;
+            }
+          })
+          .catch(function(err) {
+            $scope.authError = err.data.error || "Authentication failed.";
+          });
+      };
+
+      $scope.liveBTC = null;
+      $scope.liveINR = null;
+
+      $scope.fetchLiveMarketData = function() {
+        $http.get("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT")
+          .then(function(res) { $scope.liveBTC = parseFloat(res.data.price); })
+          .catch(function(err) { console.log("BTC API Error"); });
+
+        $http.get("https://open.er-api.com/v6/latest/USD")
+          .then(function(res) { $scope.liveINR = res.data.rates.INR; })
+          .catch(function(err) { console.log("INR API Error"); });
+      };
+      $scope.fetchLiveMarketData();
+
+      $scope.income = null; $scope.estIncomeTax = 0;
+      $scope.assetType = ""; $scope.profit = null; $scope.investTaxOwed = 0;
+
+      $scope.calculateIncomeTax = function() {
+        if (!$scope.income || $scope.income <= 250000) $scope.estIncomeTax = 0;
+        else if ($scope.income > 250000 && $scope.income <= 500000) $scope.estIncomeTax = ($scope.income - 250000) * 0.05;
+        else if ($scope.income > 500000 && $scope.income <= 1000000) $scope.estIncomeTax = 12500 + (($scope.income - 500000) * 0.20);
+        else $scope.estIncomeTax = 112500 + (($scope.income - 1000000) * 0.30);
+      };
+
+      $scope.calculateInvestTax = function() {
+        if(!$scope.profit || !$scope.assetType) { $scope.investTaxOwed = 0; return; }
+        if ($scope.assetType === 'crypto') { $scope.investTaxOwed = $scope.profit * 0.30; } 
+        else if ($scope.assetType === 'stcg') { $scope.investTaxOwed = $scope.profit * 0.20; } 
+        else if ($scope.assetType === 'ltcg') {
+          $scope.investTaxOwed = $scope.profit <= 125000 ? 0 : ($scope.profit - 125000) * 0.125;
+        }
+      };
+
+      // FETCH REAL LIVE BINANCE DATA FOR THE CHART
+      $scope.fetchLiveChart = function() {
+        $http.get("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=30")
+          .then(function(res) {
+            let labels = [];
+            let prices = [];
+            
+            res.data.forEach(candle => {
+              let date = new Date(candle[0]);
+              labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+              prices.push(parseFloat(candle[4])); // Closing price
+            });
+            
+            const ctx = document.getElementById('landingChart').getContext('2d');
+            if(window.liveChart) window.liveChart.destroy();
+            
+            Chart.defaults.color = '#94a3b8'; 
+            Chart.defaults.font.family = 'Inter';
+
+            // Determine if the trend is up or down over the 30 days to dynamically color it
+            let isUp = prices[prices.length - 1] >= prices[0];
+            let lineColor = isUp ? '#10b981' : '#ef4444';
+            let gradColor1 = isUp ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+            let gradColor2 = isUp ? 'rgba(16, 185, 129, 0.0)' : 'rgba(239, 68, 68, 0.0)';
+            
+            let dynamicGradient = ctx.createLinearGradient(0, 0, 0, 400);
+            dynamicGradient.addColorStop(0, gradColor1);
+            dynamicGradient.addColorStop(1, gradColor2);
+
+            window.liveChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: labels,
+                datasets: [{ 
+                    label: 'BTC/USDT Price', 
+                    data: prices, 
+                    borderColor: lineColor, 
+                    backgroundColor: dynamicGradient, 
+                    fill: true, 
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    borderWidth: 2
+                }]
+              },
+              options: { 
+                  responsive: true, 
+                  maintainAspectRatio: false, 
+                  scales: { 
+                      y: { grid: { color: 'rgba(51, 65, 85, 0.3)' } }, 
+                      x: { grid: { display: false } } 
+                  },
+                  plugins: { legend: { display: false } },
+                  interaction: { intersect: false, mode: 'index' }
+              }
+            });
+          })
+          .catch(err => console.log("Chart API Error"));
+      };
+      
+      // Load the chart when the page loads
+      $scope.fetchLiveChart();
+    });
+  </script>
+</body>
+</html>

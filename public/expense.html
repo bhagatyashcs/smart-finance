@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+  <title>Expense Tracker | Smart Finance</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #0B1120; color: #f8fafc; display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar { width: 280px; background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; padding: 32px 20px; }
+    .sidebar-brand { color: #fff; font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; padding-left: 12px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;}
+    .sidebar-brand svg { stroke: #38bdf8; width: 28px; height: 28px; }
+    .sidebar-brand span { color: #38bdf8; }
+    .nav-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: #475569; margin-bottom: 15px; padding-left: 12px; font-weight: 700; }
+    .nav-link { display: flex; align-items: center; gap: 14px; padding: 14px 16px; color: #94a3b8; text-decoration: none; border-radius: 10px; font-weight: 500; transition: all 0.3s ease; margin-bottom: 8px; border-left: 3px solid transparent; }
+    .nav-link svg { width: 20px; height: 20px; stroke-width: 2; transition: all 0.3s ease; }
+    .nav-link:hover { background: #1e293b; color: #f8fafc; transform: translateX(4px); border-left-color: #475569; }
+    .nav-link:hover svg { color: #38bdf8; }
+    .nav-link.active { background: linear-gradient(to right, rgba(56, 189, 248, 0.15), rgba(56, 189, 248, 0.02)); color: #38bdf8; border-left: 3px solid #38bdf8; border-radius: 0 10px 10px 0; font-weight: 600; }
+
+    /* MAIN CONTENT */
+    .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+    h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 24px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    h3 { font-size: 1.1rem; color: #e2e8f0; margin-bottom: 16px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+
+    input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; margin-bottom: 12px; font-family: inherit; }
+    input[type="file"] { padding: 9px; font-size: 0.85rem; }
+    input:focus, select:focus { outline: none; border-color: #38bdf8; }
+    
+    .action-btn { width: 100%; padding: 12px; background: #38bdf8; color: #0B1120; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .action-btn:hover { background: #0ea5e9; }
+    .btn-outline { background: transparent; border: 1px solid #38bdf8; color: #38bdf8; font-weight: 600; padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s;}
+    .btn-outline:hover { background: rgba(56, 189, 248, 0.1); }
+
+    .expense-list { list-style: none; max-height: 250px; overflow-y: auto; padding-right: 5px;}
+    .expense-list::-webkit-scrollbar { width: 6px; } .expense-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    .expense-item { background: #0f172a; padding: 12px 16px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s;}
+    .btn-danger:hover { background: #ef4444; color: white; }
+    
+    .category-badge { background: #334155; color: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 10px; font-weight: 600; text-transform: uppercase;}
+  </style>
+</head>
+<body ng-controller="ExpenseCtrl">
+
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Smart<span>Finance</span>
+    </div>
+
+    <div class="nav-label">Main Menu</div>
+    
+    <a href="/" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      Dashboard
+    </a>
+    <a href="/expense" class="nav-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      Expense Tracker
+    </a>
+    <a href="/invest" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      Portfolio & Tax
+    </a>
+  </div>
+
+  <div class="main-content">
+    <h1>💸 Income & Expense Manager</h1>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>1. Monthly Spending vs Budget</h3>
+        <div style="position: relative; height: 300px; width: 100%; margin-bottom: 20px;">
+          <canvas id="monthlyBarChart"></canvas>
+        </div>
+        <div style="font-size: 1.1rem; font-weight: 600; text-align: center; color: #f8fafc; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155;">
+          Total Spent (All Months): <span style="color: #ef4444;">₹{{totalExpense | number:0}}</span>
+        </div>
+        <div style="margin-top: 30px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid #334155;">
+          <h3 style="margin-top: 0; border: none; padding-bottom: 5px;">Set Chart Budget Limit</h3>
+          <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 15px;">Change the red target line on your graph.</p>
+          <input type="number" ng-model="chartBudgetLimit" ng-change="updateChartLimit()" placeholder="e.g. 20000" style="margin-bottom: 0;">
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>2. Record Expenses</h3>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+          <select ng-model="emonth" style="margin: 0; flex: 1;">
+            <option value="">Month</option>
+            <option ng-repeat="m in months" value="{{m}}">{{m}}</option>
+          </select>
+          <input ng-model="ename" placeholder="What did you buy?" style="margin: 0; flex: 2;">
+          <select ng-model="ecategory" style="margin: 0; flex: 1.5;">
+            <option value="">-- Category --</option>
+            <option value="Food">🍔 Food</option>
+            <option value="Tech">💻 Tech</option>
+            <option value="Lifestyle">🛒 Lifestyle</option>
+            <option value="Bills">🧾 Bills</option>
+            <option value="Other">📦 Other</option>
+          </select>
+          <input type="number" ng-model="eamount" placeholder="₹ Amount" style="margin: 0; flex: 1.2;">
+        </div>
+        <button class="action-btn" ng-click="addExpense()">Add Expense</button>
+
+        <div style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed #334155;">
+          <h3 style="border: none; padding: 0; margin-bottom: 10px;">Bulk Import Bank Statement</h3>
+          <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px;">Upload a .csv file (Format: Date, Description, Amount)</p>
+          <div style="display: flex; gap: 10px;">
+            <input type="file" id="csvFileInput" accept=".csv" style="flex: 2; margin: 0;">
+            <button class="btn-outline" style="flex: 1; margin: 0;" ng-click="importBankCSV()">Upload CSV</button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-bottom: 1px solid #334155; padding-bottom: 10px;">
+            <h3 style="margin: 0; border: none; padding: 0;">Recent Expenses</h3>
+            
+            <select ng-model="selectedMonth" ng-change="filterUI()" style="width: auto; padding: 6px 12px; margin: 0;">
+                <option value="">All Months</option>
+                <option ng-repeat="m in months" value="{{m}}">{{m}}</option>
+            </select>
+        </div>
+        
+        <ul class="expense-list" style="margin-top: 15px;">
+          <li class="expense-item" ng-repeat="e in displayExpenses track by $index">
+            <span>
+              <span class="category-badge">{{e.month || 'N/A'}}</span>
+              <span class="category-badge">{{e.category}}</span>
+              <strong>{{e.name}}</strong> 
+              <span style="color:#94a3b8; margin-left:8px;">₹{{e.amount}}</span>
+            </span>
+            <button class="btn-danger" ng-click="deleteExpense(e._id)">Drop</button>
+          </li>
+          <li ng-if="displayExpenses.length === 0" style="color: #64748b; text-align:center; padding: 20px 0;">No expenses found for this selection.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var app = angular.module("app", []);
+
+    app.controller("ExpenseCtrl", function($scope, $http, $window){
+      $scope.expenses = [];
+      $scope.displayExpenses = []; // 🛠️ FIX: A dedicated array just for the screen
+      $scope.totalExpense = 0;
+      $scope.ecategory = ""; $scope.emonth = "";
+      $scope.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      $scope.selectedMonth = ""; 
+      $scope.chartBudgetLimit = parseFloat($window.localStorage.getItem('chartBudgetLimit')) || 20000;
+
+      const token = $window.localStorage.getItem('token');
+      $scope.isGuest = !token;
+      const getHeaders = () => ({ headers: { Authorization: 'Bearer ' + token } });
+
+      // 🛠️ BULLETPROOF FILTER FUNCTION: Plain Javascript, no Angular pipe magic
+      $scope.filterUI = function() {
+          if (!$scope.selectedMonth || $scope.selectedMonth === "") {
+              $scope.displayExpenses = $scope.expenses; // Show everything
+          } else {
+              $scope.displayExpenses = $scope.expenses.filter(e => e.month === $scope.selectedMonth);
+          }
+      };
+
+      $scope.updateChartLimit = function() {
+          $window.localStorage.setItem('chartBudgetLimit', $scope.chartBudgetLimit);
+          $scope.refreshChart();
+      };
+
+      $scope.refreshChart = function() {
+          $scope.totalExpense = 0;
+          let monthlyData = new Array(12).fill(0);
+          $scope.expenses.forEach(e => {
+              $scope.totalExpense += (parseFloat(e.amount) || 0);
+              let mIndex = $scope.months.indexOf(e.month);
+              if(mIndex !== -1) monthlyData[mIndex] += (parseFloat(e.amount) || 0);
+          });
+          drawMonthlyBarChart(monthlyData);
+          
+          // 🛠️ FIX: Force the list to update every time the data updates
+          $scope.filterUI(); 
+      };
+
+      $scope.loadExpenses = function(){
+        if ($scope.isGuest) {
+            $scope.expenses = JSON.parse($window.localStorage.getItem('guest_expenses') || '[]');
+            $scope.refreshChart();
+        } else {
+            $http.get("/expenses", getHeaders()).then(res => {
+                $scope.expenses = res.data || [];
+                $scope.refreshChart();
+            }).catch(() => $window.location.href = '/');
+        }
+      };
+
+      $scope.addExpense = function(){
+        if(!$scope.ename || !$scope.eamount || !$scope.emonth) return alert("Fill all fields.");
+        let newExp = { name: $scope.ename, category: $scope.ecategory || "Other", amount: $scope.eamount, month: $scope.emonth, _id: Date.now().toString() };
+
+        if ($scope.isGuest) {
+            $scope.expenses.unshift(newExp);
+            $window.localStorage.setItem('guest_expenses', JSON.stringify($scope.expenses));
+            $scope.ename=""; $scope.eamount=""; $scope.ecategory=""; $scope.emonth="";
+            $scope.refreshChart();
+        } else {
+            $http.post("/add-expense", newExp, getHeaders()).then(() => {
+                $scope.ename=""; $scope.eamount=""; $scope.ecategory=""; $scope.emonth="";
+                $scope.loadExpenses();
+            });
+        }
+      };
+
+      $scope.deleteExpense = function(id){
+        if ($scope.isGuest) {
+            $scope.expenses = $scope.expenses.filter(e => e._id !== id && e._id != id);
+            $window.localStorage.setItem('guest_expenses', JSON.stringify($scope.expenses));
+            $scope.refreshChart();
+        } else {
+            $http.delete("/delete-expense/"+id, getHeaders()).then(() => $scope.loadExpenses());
+        }
+      };
+
+      $scope.importBankCSV = function() {
+          const fileInput = document.getElementById('csvFileInput');
+          const file = fileInput.files[0];
+          if (!file) return alert("Please select a .csv file from your computer first.");
+
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              $scope.$apply(function() {
+                  const text = e.target.result;
+                  const rows = text.split('\n').filter(row => row.trim() !== '');
+                  if(rows.length < 2) return alert("File appears to be empty.");
+
+                  const importedExpenses = [];
+                  for(let i = 1; i < rows.length; i++) {
+                      const cols = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+                      if(cols.length >= 3) {
+                          let rawDate = (cols[0] || "").replace(/"/g, '').trim();
+                          let desc = (cols[1] || "").replace(/"/g, '').trim();
+                          let amountStr = (cols[2] || "").replace(/"/g, '').trim();
+                          let amount = Math.abs(parseFloat(amountStr));
+
+                          if(!isNaN(amount) && amount > 0) {
+                              let dateObj = new Date(rawDate);
+                              let parsedMonth = isNaN(dateObj.getTime()) ? "Other" : $scope.months[dateObj.getMonth()];
+                              
+                              importedExpenses.push({
+                                  name: desc || "Imported Expense", 
+                                  amount: amount, 
+                                  month: parsedMonth, 
+                                  category: "Imported", 
+                                  _id: Date.now().toString() + "_" + i
+                              });
+                          }
+                      }
+                  }
+
+                  if(importedExpenses.length > 0) {
+                      if ($scope.isGuest) {
+                          $scope.expenses = [...importedExpenses, ...$scope.expenses];
+                          $window.localStorage.setItem('guest_expenses', JSON.stringify($scope.expenses));
+                          alert(`Success! Imported ${importedExpenses.length} expenses.`);
+                          fileInput.value = ''; 
+                          $scope.refreshChart();
+                      } else {
+                          $http.post('/add-expenses-bulk', { expenses: importedExpenses }, getHeaders())
+                          .then(() => {
+                              alert(`Success! Imported ${importedExpenses.length} expenses.`);
+                              fileInput.value = ''; 
+                              $scope.loadExpenses(); 
+                          })
+                          .catch(err => alert("Server error during import."));
+                      }
+                  } else {
+                      alert("Error: Could not read data. Ensure your CSV columns are exactly: Date, Description, Amount.");
+                  }
+              });
+          };
+          reader.readAsText(file);
+      };
+
+      function drawMonthlyBarChart(monthlyData) {
+          const ctx = document.getElementById('monthlyBarChart');
+          let currentLimit = $scope.chartBudgetLimit || 0;
+
+          if (window.mBarChart) {
+              window.mBarChart.data.datasets[0].data = new Array(12).fill(currentLimit);
+              window.mBarChart.data.datasets[1].data = monthlyData;
+              window.mBarChart.update(); 
+          } else {
+              Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter';
+              window.mBarChart = new Chart(ctx, {
+                  data: { labels: $scope.months, datasets: [
+                      { type: 'line', label: 'Budget Limit', data: new Array(12).fill(currentLimit), borderColor: '#ef4444', borderDash: [5, 5], fill: false },
+                      { type: 'bar', label: 'Amount Spent', data: monthlyData, backgroundColor: '#38bdf8', borderRadius: 4, maxBarThickness: 50 }
+                  ]},
+                  options: { responsive: true, maintainAspectRatio: false }
+              });
+          }
+      }
+
+      $scope.loadExpenses();
+    });
+  </script>
+</body>
+</html>

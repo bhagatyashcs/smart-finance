@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+  <title>Portfolio Analyzer | Smart Finance</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #0B1120; color: #f8fafc; display: flex; min-height: 100vh; }
+
+    /* SIDEBAR (Upgraded Premium Look) */
+    .sidebar { width: 280px; background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; padding: 32px 20px; }
+    
+    .sidebar-brand { color: #fff; font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; padding-left: 12px; display: flex; align-items: center; gap: 12px; letter-spacing: -0.5px;}
+    .sidebar-brand svg { stroke: #38bdf8; width: 28px; height: 28px; }
+    .sidebar-brand span { color: #38bdf8; }
+    
+    .nav-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: #475569; margin-bottom: 15px; padding-left: 12px; font-weight: 700; }
+    
+    .nav-link { display: flex; align-items: center; gap: 14px; padding: 14px 16px; color: #94a3b8; text-decoration: none; border-radius: 10px; font-weight: 500; transition: all 0.3s ease; margin-bottom: 8px; border-left: 3px solid transparent; }
+    .nav-link svg { width: 20px; height: 20px; stroke-width: 2; transition: all 0.3s ease; }
+    
+    .nav-link:hover { background: #1e293b; color: #f8fafc; transform: translateX(4px); border-left-color: #475569; }
+    .nav-link:hover svg { color: #38bdf8; }
+    
+    /* The active glowing state */
+    .nav-link.active { background: linear-gradient(to right, rgba(56, 189, 248, 0.15), rgba(56, 189, 248, 0.02)); color: #38bdf8; border-left: 3px solid #38bdf8; border-radius: 0 10px 10px 0; font-weight: 600; }
+
+    /* MAIN CONTENT */
+    .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+    h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 24px; }
+    
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 30px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); animation: fadeIn 0.5s ease; }
+    h3 { font-size: 1.2rem; color: #fff; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    input, select { padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: white; font-family: inherit; font-size: 0.95rem;}
+    input:focus, select:focus { outline: none; border-color: #38bdf8; }
+    
+    .action-btn { padding: 12px 24px; background: #38bdf8; color: #0B1120; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .action-btn:hover { background: #0ea5e9; }
+    
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid #ef4444; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: 0.2s;}
+    .btn-danger:hover { background: #ef4444; color: white; }
+
+    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+    .metric-box { background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid #334155; text-align: center; }
+    .metric-title { font-size: 0.85rem; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;}
+    .metric-value { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    .text-green { color: #10b981; }
+    .text-red { color: #ef4444; }
+
+    .feedback-box { background: linear-gradient(145deg, rgba(16, 185, 129, 0.1), rgba(15, 23, 42, 0.5)); border-left: 4px solid #10b981; padding: 20px; border-radius: 8px; margin-top: 25px; }
+    .feedback-box h4 { color: #10b981; margin-bottom: 10px; font-size: 1.1rem;}
+    .feedback-box ul { padding-left: 20px; color: #cbd5e1; }
+    .feedback-box li { margin-bottom: 12px; line-height: 1.5; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { text-align: left; padding: 12px; color: #94a3b8; font-size: 0.85rem; border-bottom: 1px solid #334155; }
+    td { padding: 12px; border-bottom: 1px solid #334155; font-size: 0.95rem; }
+    .badge { background: #334155; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase;}
+  </style>
+</head>
+<body ng-controller="InvestCtrl">
+
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Smart<span>Finance</span>
+    </div>
+
+    <div class="nav-label">Main Menu</div>
+    
+    <a href="/" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      Dashboard
+    </a>
+    
+    <a href="/expense.html" class="nav-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+      Expense Tracker
+    </a>
+    
+    <a href="/invest.html" class="nav-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      Portfolio & Tax
+    </a>
+  </div>
+
+  <div class="main-content">
+    <h1>📈 Portfolio Wizard</h1>
+
+    <div class="card">
+      <h3>Step 1: Annual Income Base</h3>
+      <p style="color: #94a3b8; margin-bottom: 15px; font-size: 0.9rem;">To calculate your total net worth and taxes, let's start with your baseline income.</p>
+      <div style="display: flex; gap: 15px;">
+        <input type="number" ng-model="annualIncome" ng-change="saveIncome()" placeholder="Enter Annual Income (₹)" style="flex: 1; max-width: 300px;">
+      </div>
+    </div>
+
+    <div class="card" ng-show="annualIncome > 0">
+      <h3>Step 2: Log Your Investments</h3>
+      <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+        <input ng-model="coin" placeholder="Asset Name (e.g. BTC, HDFC)" style="flex: 2; min-width: 150px;">
+        
+        <select ng-model="assetType" style="flex: 1.5; min-width: 150px;">
+          <option value="">-- Select Category --</option>
+          <option value="crypto">Crypto (30% Tax)</option>
+          <option value="stcg">Short Term (<1 yr) (20%)</option>
+          <option value="ltcg">Long Term (>1 yr) (12.5%)</option>
+        </select>
+        
+        <input type="number" ng-model="invested" placeholder="Invested (₹)" style="flex: 1.5; min-width: 120px;">
+        <input type="number" ng-model="current" placeholder="Current Value (₹)" style="flex: 1.5; min-width: 120px;">
+        
+        <button class="action-btn" ng-click="add()">Add Asset</button>
+      </div>
+
+      <table ng-show="trades.length > 0">
+        <thead><tr><th>Asset</th><th>Category</th><th>Invested</th><th>Current</th><th>P/L</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr ng-repeat="t in trades">
+            <td><strong>{{t.coin}}</strong></td>
+            <td><span class="badge">{{t.assetType || 'N/A'}}</span></td>
+            <td>₹{{(t.invested || 0) | number:0}}</td>
+            <td>₹{{(t.current || 0) | number:0}}</td>
+            <td ng-class="(t.current || 0) - (t.invested || 0) >= 0 ? 'text-green' : 'text-red'">
+              {{(t.current || 0) - (t.invested || 0) >= 0 ? '+' : ''}}₹{{(t.current || 0) - (t.invested || 0) | number:0}}
+            </td>
+            <td><button class="btn-danger" ng-click="delete(t._id)">Drop</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" ng-show="annualIncome > 0 && trades.length > 0">
+      <h3>Step 3: Financial Analytics & Net Worth</h3>
+      
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-title">Est. Income Tax</div>
+          <div class="metric-value text-red">- ₹{{calcIncomeTax() | number:0}}</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-title">Capital Gains Tax</div>
+          <div class="metric-value text-red">- ₹{{totalCapGainsTax | number:0}}</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-title">Portfolio P/L</div>
+          <div class="metric-value" ng-class="totalProfit >= 0 ? 'text-green' : 'text-red'">
+            {{totalProfit >= 0 ? '+' : ''}}₹{{totalProfit | number:0}}
+          </div>
+        </div>
+        <div class="metric-box" style="border-color: #38bdf8;">
+          <div class="metric-title" style="color: #38bdf8;">Total Net Worth</div>
+          <div class="metric-value text-green">₹{{calcNetWorth() | number:0}}</div>
+        </div>
+      </div>
+
+      <h4 style="color: #94a3b8; margin-bottom: 10px; font-weight: 500;">Asset Growth vs Invested Capital</h4>
+      <div style="position: relative; height: 300px; width: 100%; margin-bottom: 20px; background: #0f172a; border-radius: 12px; padding: 15px; border: 1px solid #334155;">
+        <canvas id="growthChart"></canvas>
+      </div>
+
+      <div class="feedback-box">
+        <h4>💡 Financial Advisor Insights & Recommendations</h4>
+        <ul>
+          <li ng-repeat="advice in feedbackList">{{advice}}</li>
+        </ul>
+      </div>
+      
+    </div>
+
+  </div>
+
+<script>
+    var app = angular.module("app", []);
+
+    app.controller("InvestCtrl", function($scope, $http, $window){
+      $scope.trades = []; 
+      $scope.feedbackList = []; // 🛠️ RESTORED
+      $scope.annualIncome = parseFloat($window.localStorage.getItem('savedIncome')) || null;
+      
+      const token = $window.localStorage.getItem('token');
+      $scope.isGuest = !token;
+      const getHeaders = () => ({ headers: { Authorization: 'Bearer ' + token } });
+
+      $scope.saveIncome = function() {
+          if ($scope.annualIncome) $window.localStorage.setItem('savedIncome', $scope.annualIncome);
+      };
+
+      $scope.calcIncomeTax = function() {
+        let inc = $scope.annualIncome || 0;
+        if(inc <= 250000) return 0;
+        if(inc <= 500000) return (inc - 250000) * 0.05;
+        if(inc <= 1000000) return 12500 + ((inc - 500000) * 0.20);
+        return 112500 + ((inc - 1000000) * 0.30);
+      };
+
+      $scope.calcNetWorth = function() {
+          let incomeAfterIncomeTax = ($scope.annualIncome || 0) - $scope.calcIncomeTax();
+          let currentPortfolioValue = 0;
+          $scope.trades.forEach(t => currentPortfolioValue += (parseFloat(t.current) || 0));
+          return incomeAfterIncomeTax + currentPortfolioValue - ($scope.totalCapGainsTax || 0);
+      };
+      
+      $scope.load = function(){
+        if ($scope.isGuest) {
+            $scope.trades = JSON.parse($window.localStorage.getItem('guest_trades') || '[]');
+            $scope.calculateAnalytics();
+            if ($scope.trades.length > 0) setTimeout(drawGrowthChart, 100);
+        } else {
+            $http.get("/trades", getHeaders()).then(res => {
+                $scope.trades = res.data || [];
+                $scope.calculateAnalytics();
+                if ($scope.trades.length > 0) setTimeout(drawGrowthChart, 100);
+            }).catch(() => $window.location.href = '/');
+        }
+      };
+      
+      $scope.add = function(){
+        if(!$scope.coin || !$scope.invested || !$scope.current || !$scope.assetType) return alert("Fill all fields.");
+        let payload = { coin: $scope.coin, assetType: $scope.assetType, invested: parseFloat($scope.invested), current: parseFloat($scope.current), _id: Date.now().toString() };
+
+        if ($scope.isGuest) {
+            $scope.trades.unshift(payload);
+            $window.localStorage.setItem('guest_trades', JSON.stringify($scope.trades));
+            $scope.coin=""; $scope.invested=""; $scope.current=""; $scope.assetType="";
+            $scope.load();
+        } else {
+            $http.post("/add", payload, getHeaders()).then(() => { 
+                $scope.coin=""; $scope.invested=""; $scope.current=""; $scope.assetType=""; 
+                $scope.load(); 
+            });
+        }
+      };
+      
+      $scope.delete = function(id){ 
+          if ($scope.isGuest) {
+              $scope.trades = $scope.trades.filter(t => t._id !== id);
+              $window.localStorage.setItem('guest_trades', JSON.stringify($scope.trades));
+              $scope.load();
+          } else {
+              $http.delete("/delete/"+id, getHeaders()).then(() => $scope.load()); 
+          }
+      };
+
+      $scope.calculateAnalytics = function() {
+          $scope.totalProfit = 0; $scope.totalCapGainsTax = 0;
+          let totalPortfolio = 0;
+          let cryptoTotal = 0; // 🛠️ RESTORED
+          
+          $scope.trades.forEach(t => {
+              let safeInvested = parseFloat(t.invested) || 0;
+              let safeCurrent = parseFloat(t.current) || 0;
+              let profit = safeCurrent - safeInvested;
+              $scope.totalProfit += profit;
+              totalPortfolio += safeCurrent;
+
+              if (profit > 0) {
+                  if (t.assetType === 'crypto') {
+                      $scope.totalCapGainsTax += (profit * 0.30);
+                      cryptoTotal += safeCurrent; 
+                  }
+                  else if (t.assetType === 'stcg') {
+                      $scope.totalCapGainsTax += (profit * 0.20); 
+                  }
+              }
+          });
+          
+          generateFeedback(cryptoTotal, totalPortfolio); // 🛠️ RESTORED
+      };
+      
+      // 🛠️ RESTORED FUNCTION
+      function generateFeedback(cryptoTotal, totalPortfolio) {
+          $scope.feedbackList = [];
+          
+          if ($scope.totalProfit > 0) {
+              $scope.feedbackList.push("✅ Your portfolio is in profit. Consider rebalancing by taking initial capital out of high-flying assets.");
+          } else if ($scope.totalProfit < 0) {
+              $scope.feedbackList.push("⚠️ Your portfolio is currently tracking a net loss. Avoid panic selling; evaluate if the fundamentals of your assets have changed.");
+          }
+
+          let cryptoPercent = totalPortfolio > 0 ? (cryptoTotal / totalPortfolio) * 100 : 0;
+          if (cryptoPercent > 40) {
+              $scope.feedbackList.push(`🚨 High Tax Risk: ${cryptoPercent.toFixed(0)}% of your portfolio is Crypto. This carries a flat 30% tax. Look to shift gains into tax-efficient LTCG assets.`);
+          }
+
+          $scope.feedbackList.push("📊 Stock Suggestion (Stability): Consider broad-market ETFs like NIFTYBEES or Index Funds. They offer steady, long-term compounding with favorable LTCG tax rates.");
+          $scope.feedbackList.push("💡 Stock Suggestion (Yield): To build passive income, research high-dividend blue-chip stocks (e.g., ITC, Coal India). They provide cash flow even when the market trades sideways.");
+      }
+      
+      function drawGrowthChart(){
+        const ctx = document.getElementById('growthChart');
+        if(!ctx) return;
+        if(window.gChart) window.gChart.destroy();
+        Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter';
+
+        window.gChart = new Chart(ctx.getContext('2d'), {
+          type: 'bar',
+          data: { 
+              labels: $scope.trades.map(t => t.coin), 
+              datasets: [
+                  { label: 'Invested', data: $scope.trades.map(t => t.invested), backgroundColor: '#334155', borderRadius: 4, maxBarThickness: 50 },
+                  { label: 'Current Value', data: $scope.trades.map(t => t.current), backgroundColor: $scope.trades.map(t => t.current >= t.invested ? '#10b981' : '#ef4444'), borderRadius: 4, maxBarThickness: 50 }
+              ] 
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      }
+      
+      $scope.load();
+    });
+  </script>
+</body>
+</html>
