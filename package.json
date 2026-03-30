@@ -1,0 +1,15 @@
+{
+  "name": "smart-finance",
+  "version": "1.0.0",
+  "description": "Full-stack finance tracker",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.0.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
