@@ -67,11 +67,11 @@
             SmartFinance
         </div>
         <div class="nav-buttons">
-            <div ng-if="!loggedInUser">
+            <div ng-show="!loggedInUser">
                 <button class="btn btn-outline" style="margin-right: 10px;" ng-click="scrollToAuth()">Login</button>
                 <button class="btn btn-primary" ng-click="scrollToAuth()">Create Account</button>
             </div>
-            <div ng-if="loggedInUser" style="display: flex; align-items: center; gap: 15px;">
+            <div ng-show="loggedInUser" style="display: flex; align-items: center; gap: 15px;">
                 <span style="color: #10b981; font-weight: 600;">Logged in as {{loggedInUser}}</span>
                 <a href="/expense" class="btn btn-primary" style="text-decoration: none;">Dashboard</a>
                 <button class="btn btn-danger" ng-click="logout()">Logout</button>
@@ -80,7 +80,7 @@
     </nav>
 
     <div class="ticker">
-        BTC/USDT: <span ng-if="liveBTC > 0">${{liveBTC | number:2}}</span><span ng-if="!liveBTC">Loading...</span> | 
+        BTC/USDT: <span ng-show="liveBTC > 0">${{liveBTC | number:2}}</span><span ng-show="!liveBTC">Loading...</span> | 
         USD/INR: <span class="text-red">₹{{liveINR | number:2}}</span>
     </div>
 
@@ -91,14 +91,14 @@
 
     <div class="container">
         
-        <div class="auth-container" id="authSection" ng-if="!loggedInUser">
+        <div class="auth-container" id="authSection" ng-show="!loggedInUser">
             <h3 style="margin-bottom: 20px; font-size: 1.4rem;">{{ isLogin ? 'Welcome Back' : 'Create Free Account' }}</h3>
             
             <form ng-submit="submitAuth($event)">
                 <input type="text" ng-model="username" placeholder="Username" required>
                 <input type="password" ng-model="password" placeholder="Password" required>
                 
-                <div class="auth-error" ng-if="authError">{{authError}}</div>
+                <div class="auth-error" ng-show="authError">{{authError}}</div>
                 
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 1rem;" ng-disabled="isLoading">
                     {{ isLoading ? 'Processing...' : (isLogin ? 'Log In' : 'Create Account') }}
@@ -146,7 +146,7 @@
                     <span>Net Take-Home:</span>
                     <span class="text-green">₹{{ (profit - investTaxOwed) > 0 ? (profit - investTaxOwed) : 0 | number:0}}</span>
                 </div>
-                <p ng-if="assetClass === 'ltcg'" style="color: #10b981; font-size: 0.75rem; text-align: right; margin-top: 5px;">*First ₹1.25L is tax-free!</p>
+                <p ng-show="assetClass === 'ltcg'" style="color: #10b981; font-size: 0.75rem; text-align: right; margin-top: 5px;">*First ₹1.25L is tax-free!</p>
                 
                 <a href="/invest" class="btn btn-outline" style="display: block; text-align: center; text-decoration: none; margin-top: 20px; padding: 14px; border-color: #38bdf8; color: #38bdf8;">Launch Portfolio Wizard ➔</a>
             </div>
@@ -194,16 +194,12 @@
         
         app.controller("LandingCtrl", function($scope, $http, $window, $timeout){
 
-            // ==========================================
-            // 1. BULLETPROOF AUTHENTICATION
-            // ==========================================
             $scope.isLogin = true;
             $scope.username = "";
             $scope.password = "";
             $scope.authError = "";
             $scope.isLoading = false;
             
-            // Check if user is already logged in
             $scope.loggedInUser = $window.localStorage.getItem('username');
 
             $scope.scrollToAuth = function() {
@@ -218,8 +214,15 @@
 
             $scope.submitAuth = function(event) {
                 if(event) event.preventDefault(); 
-                if(!$scope.username || $scope.username.trim() === "") { $scope.authError = "Username is required."; return; }
-                if(!$scope.password || $scope.password.trim() === "") { $scope.authError = "Password is required."; return; }
+                
+                if(!$scope.username || $scope.username.trim() === "") { 
+                    $scope.authError = "Username is required."; 
+                    return; 
+                }
+                if(!$scope.password || $scope.password.trim() === "") { 
+                    $scope.authError = "Password is required."; 
+                    return; 
+                }
 
                 $scope.isLoading = true;
                 $scope.authError = "Connecting to server..."; 
@@ -251,9 +254,6 @@
                 $window.location.reload();
             };
 
-            // ==========================================
-            // 2. TAX CALCULATORS
-            // ==========================================
             $scope.annualIncome = null;
             $scope.estIncomeTax = 0;
             
@@ -277,18 +277,13 @@
                 else $scope.investTaxOwed = 0;
             });
 
-            // ==========================================
-            // 3. LIVE DATA & CHART
-            // ==========================================
             $scope.liveBTC = 0;
             $scope.liveINR = 83.50; 
 
-            // Binance API call
             $http.get('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT').then(res => {
                 $scope.liveBTC = parseFloat(res.data.price);
             }).catch(err => console.log("Binance API blocked or failed."));
 
-            // Initialize Chart.js
             setTimeout(() => {
                 const canvas = document.getElementById('landingChart');
                 if(canvas && window.Chart) {
