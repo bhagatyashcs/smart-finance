@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const dbURI = process.env.MONGODB_URI;
 
 if (!dbURI) {
-    console.error("🚨 CRITICAL ERROR: MONGODB_URI is not defined in Vercel environment variables!");
+    console.error("🚨 CRITICAL ERROR: MONGODB_URI is not defined in environment variables!");
 } else {
     mongoose.connect(dbURI, {
         useNewUrlParser: true,
@@ -208,6 +208,13 @@ app.delete('/delete/:id', authenticateToken, async (req, res) => {
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'landing.html')); });
 app.get('/expense', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'expense.html')); });
 app.get('/invest', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'invest.html')); });
+
+// ==========================================
+// 8. CATCH-ALL SAFETY NET (Fixes "Not Found")
+// ==========================================
+app.get('*', (req, res) => {
+    res.redirect('/');
+});
 
 // Start the Server
 const PORT = process.env.PORT || 3000;
