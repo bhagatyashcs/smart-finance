@@ -149,7 +149,7 @@
 
     app.controller("ExpenseCtrl", function($scope, $http, $window){
       $scope.expenses = [];
-      $scope.displayExpenses = []; // 🛠️ FIX: A dedicated array just for the screen
+      $scope.displayExpenses = []; 
       $scope.totalExpense = 0;
       $scope.ecategory = ""; $scope.emonth = "";
       $scope.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -160,10 +160,9 @@
       $scope.isGuest = !token;
       const getHeaders = () => ({ headers: { Authorization: 'Bearer ' + token } });
 
-      // 🛠️ BULLETPROOF FILTER FUNCTION: Plain Javascript, no Angular pipe magic
       $scope.filterUI = function() {
           if (!$scope.selectedMonth || $scope.selectedMonth === "") {
-              $scope.displayExpenses = $scope.expenses; // Show everything
+              $scope.displayExpenses = $scope.expenses; 
           } else {
               $scope.displayExpenses = $scope.expenses.filter(e => e.month === $scope.selectedMonth);
           }
@@ -174,17 +173,18 @@
           $scope.refreshChart();
       };
 
+      // FIX: Added setTimeout so the chart logic waits for the canvas to load before drawing!
       $scope.refreshChart = function() {
           $scope.totalExpense = 0;
           let monthlyData = new Array(12).fill(0);
+          
           $scope.expenses.forEach(e => {
               $scope.totalExpense += (parseFloat(e.amount) || 0);
               let mIndex = $scope.months.indexOf(e.month);
               if(mIndex !== -1) monthlyData[mIndex] += (parseFloat(e.amount) || 0);
           });
-          drawMonthlyBarChart(monthlyData);
           
-          // 🛠️ FIX: Force the list to update every time the data updates
+          setTimeout(() => { drawMonthlyBarChart(monthlyData); }, 200);
           $scope.filterUI(); 
       };
 
@@ -289,6 +289,7 @@
 
       function drawMonthlyBarChart(monthlyData) {
           const ctx = document.getElementById('monthlyBarChart');
+          if(!ctx) return;
           let currentLimit = $scope.chartBudgetLimit || 0;
 
           if (window.mBarChart) {
@@ -300,7 +301,7 @@
               window.mBarChart = new Chart(ctx, {
                   data: { labels: $scope.months, datasets: [
                       { type: 'line', label: 'Budget Limit', data: new Array(12).fill(currentLimit), borderColor: '#ef4444', borderDash: [5, 5], fill: false },
-                      { type: 'bar', label: 'Amount Spent', data: monthlyData, backgroundColor: '#38bdf8', borderRadius: 4, maxBarThickness: 50 }
+                      { type: 'bar', label: 'Amount Spent', data: monthlyData, backgroundColor: '#38bdf8', borderRadius: 4, barThickness: 40 }
                   ]},
                   options: { responsive: true, maintainAspectRatio: false }
               });
