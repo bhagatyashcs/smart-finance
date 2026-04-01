@@ -173,7 +173,6 @@
           $scope.refreshChart();
       };
 
-      // FIX: Added setTimeout so the chart logic waits for the canvas to load before drawing!
       $scope.refreshChart = function() {
           $scope.totalExpense = 0;
           let monthlyData = new Array(12).fill(0);
@@ -202,18 +201,20 @@
 
       $scope.addExpense = function(){
         if(!$scope.ename || !$scope.eamount || !$scope.emonth) return alert("Fill all fields.");
-        let newExp = { name: $scope.ename, category: $scope.ecategory || "Other", amount: $scope.eamount, month: $scope.emonth, _id: Date.now().toString() };
 
         if ($scope.isGuest) {
+            let newExp = { name: $scope.ename, category: $scope.ecategory || "Other", amount: $scope.eamount, month: $scope.emonth, _id: Date.now().toString() };
             $scope.expenses.unshift(newExp);
             $window.localStorage.setItem('guest_expenses', JSON.stringify($scope.expenses));
             $scope.ename=""; $scope.eamount=""; $scope.ecategory=""; $scope.emonth="";
             $scope.refreshChart();
         } else {
+            let newExp = { name: $scope.ename, category: $scope.ecategory || "Other", amount: $scope.eamount, month: $scope.emonth };
+            
             $http.post("/add-expense", newExp, getHeaders()).then(() => {
                 $scope.ename=""; $scope.eamount=""; $scope.ecategory=""; $scope.emonth="";
                 $scope.loadExpenses();
-            });
+            }).catch(err => alert("Server error. Could not add expense."));
         }
       };
 
@@ -271,7 +272,11 @@
                           fileInput.value = ''; 
                           $scope.refreshChart();
                       } else {
-                          $http.post('/add-expenses-bulk', { expenses: importedExpenses }, getHeaders())
+                          const cleanExpenses = importedExpenses.map(exp => ({
+                              name: exp.name, amount: exp.amount, month: exp.month, category: exp.category
+                          }));
+
+                          $http.post('/add-expenses-bulk', { expenses: cleanExpenses }, getHeaders())
                           .then(() => {
                               alert(`Success! Imported ${importedExpenses.length} expenses.`);
                               fileInput.value = ''; 
