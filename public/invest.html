@@ -79,12 +79,12 @@
       Dashboard
     </a>
     
-    <a href="/expense.html" class="nav-link">
+    <a href="/expense" class="nav-link">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
       Expense Tracker
     </a>
     
-    <a href="/invest.html" class="nav-link active">
+    <a href="/invest" class="nav-link active">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
       Portfolio & Tax
     </a>
@@ -181,7 +181,7 @@
 
     app.controller("InvestCtrl", function($scope, $http, $window){
       $scope.trades = []; 
-      $scope.feedbackList = []; // 🛠️ RESTORED
+      $scope.feedbackList = []; 
       $scope.annualIncome = parseFloat($window.localStorage.getItem('savedIncome')) || null;
       
       const token = $window.localStorage.getItem('token');
@@ -211,30 +211,33 @@
         if ($scope.isGuest) {
             $scope.trades = JSON.parse($window.localStorage.getItem('guest_trades') || '[]');
             $scope.calculateAnalytics();
-            if ($scope.trades.length > 0) setTimeout(drawGrowthChart, 100);
+            if ($scope.trades.length > 0) setTimeout(drawGrowthChart, 200);
         } else {
             $http.get("/trades", getHeaders()).then(res => {
                 $scope.trades = res.data || [];
                 $scope.calculateAnalytics();
-                if ($scope.trades.length > 0) setTimeout(drawGrowthChart, 100);
+                if ($scope.trades.length > 0) setTimeout(drawGrowthChart, 200);
             }).catch(() => $window.location.href = '/');
         }
       };
       
+      // FIX: The backend no longer crashes because we removed the fake _id for logged in users
       $scope.add = function(){
         if(!$scope.coin || !$scope.invested || !$scope.current || !$scope.assetType) return alert("Fill all fields.");
-        let payload = { coin: $scope.coin, assetType: $scope.assetType, invested: parseFloat($scope.invested), current: parseFloat($scope.current), _id: Date.now().toString() };
 
         if ($scope.isGuest) {
+            let payload = { coin: $scope.coin, assetType: $scope.assetType, invested: parseFloat($scope.invested), current: parseFloat($scope.current), _id: Date.now().toString() };
             $scope.trades.unshift(payload);
             $window.localStorage.setItem('guest_trades', JSON.stringify($scope.trades));
             $scope.coin=""; $scope.invested=""; $scope.current=""; $scope.assetType="";
             $scope.load();
         } else {
+            // Logged-in users MUST NOT send an ID, MongoDB generates it!
+            let payload = { coin: $scope.coin, assetType: $scope.assetType, invested: parseFloat($scope.invested), current: parseFloat($scope.current) };
             $http.post("/add", payload, getHeaders()).then(() => { 
                 $scope.coin=""; $scope.invested=""; $scope.current=""; $scope.assetType=""; 
                 $scope.load(); 
-            });
+            }).catch(err => alert("Server Error: Check your database connection."));
         }
       };
       
@@ -251,7 +254,7 @@
       $scope.calculateAnalytics = function() {
           $scope.totalProfit = 0; $scope.totalCapGainsTax = 0;
           let totalPortfolio = 0;
-          let cryptoTotal = 0; // 🛠️ RESTORED
+          let cryptoTotal = 0; 
           
           $scope.trades.forEach(t => {
               let safeInvested = parseFloat(t.invested) || 0;
@@ -271,10 +274,9 @@
               }
           });
           
-          generateFeedback(cryptoTotal, totalPortfolio); // 🛠️ RESTORED
+          generateFeedback(cryptoTotal, totalPortfolio); 
       };
       
-      // 🛠️ RESTORED FUNCTION
       function generateFeedback(cryptoTotal, totalPortfolio) {
           $scope.feedbackList = [];
           
@@ -304,8 +306,8 @@
           data: { 
               labels: $scope.trades.map(t => t.coin), 
               datasets: [
-                  { label: 'Invested', data: $scope.trades.map(t => t.invested), backgroundColor: '#334155', borderRadius: 4, maxBarThickness: 50 },
-                  { label: 'Current Value', data: $scope.trades.map(t => t.current), backgroundColor: $scope.trades.map(t => t.current >= t.invested ? '#10b981' : '#ef4444'), borderRadius: 4, maxBarThickness: 50 }
+                  { label: 'Invested', data: $scope.trades.map(t => t.invested), backgroundColor: '#334155', borderRadius: 4, barThickness: 40 },
+                  { label: 'Current Value', data: $scope.trades.map(t => t.current), backgroundColor: $scope.trades.map(t => t.current >= t.invested ? '#10b981' : '#ef4444'), borderRadius: 4, barThickness: 40 }
               ] 
           },
           options: { responsive: true, maintainAspectRatio: false }
